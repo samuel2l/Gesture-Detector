@@ -1,14 +1,16 @@
 import pickle
 import cv2
+import easyocr
 import mediapipe as mp
 import numpy as np
+import pyttsx3
 
 model_dict = pickle.load(open('/Users/samuel/gesture detector/model.p', 'rb'))
 model = model_dict['model']
-
+engine = pyttsx3.init()
 labels_dict = {0: 'Live Long man', 1: 'Thank you bro', 2: 'You suck', 3: 'Oi start'}
 
-
+reader = easyocr.Reader(['en'], gpu=False)
 cap = cv2.VideoCapture(0)
 
 
@@ -65,6 +67,32 @@ while True:
 
 
             gesture_pred = labels_dict[int(prediction[0])]
+#add nice little feature where if you make a specific gesture then detect text in ssome image and read it out
+            if gesture_pred == 'Oi start':  # You can change to any gesture
+            # Now activate text detection using OCR
+                print("Gesture detected! Activating text detection...")
+
+                # Detect text in the current frame
+                image_path = '/Users/samuel/realtime_obj_detection/obj detection/iimg.jpg'
+
+                img = cv2.imread(image_path)
+                text_ = reader.readtext(img)
+
+                if text_:
+                    print(f"Text detected: {text_}")
+
+                    for t in text_:
+                        bbox, detected_text, score = t
+
+                        # Draw a bounding box around the detected text
+                        cv2.rectangle(frame, bbox[0], bbox[2], (0, 255, 0), 2)
+                        cv2.putText(frame, detected_text, bbox[0], cv2.FONT_HERSHEY_COMPLEX, 0.65, (255, 0, 0), 2)
+
+                        # Use TTS to read out the detected text
+                        engine.say(detected_text)
+                        engine.runAndWait()
+
+
 
             x1 = int(min(x_) * W) - 10
             y1 = int(min(y_) * H) - 10
